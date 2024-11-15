@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -38,4 +39,14 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+}
+
+func main() {
+	fs := http.FileServer(http.Dir("../frontend"))
+	http.Handle("/", fs)
+
+	http.HandleFunc("/ws", handleConnection)
+
+	fmt.Println("Servidor iniciado em http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
