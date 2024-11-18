@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bisca-online/backend/pkg/network"
 	"fmt"
 	"log"
 	"net/http"
@@ -30,7 +31,13 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		log.Printf("New message: %s", msg)
+		packet, err := network.Deserialize(msg)
+		if err != nil {
+			log.Println("Error trying to deserialize packet: ", err)
+			continue
+		}
+
+		log.Printf("Packet recieved: Version=%d Type=%d Payload=%s", packet.Version, packet.Type, string(packet.Data))
 
 		err = conn.WriteMessage(websocket.TextMessage, []byte("Message recieved"))
 		if err != nil {
