@@ -1,4 +1,4 @@
-import { createPacket } from './packet.js';
+import { createPacket, deserializePacket } from './packet.js';
 
 let socket;
 
@@ -11,8 +11,30 @@ export function initWebSocket() {
     };
 
     socket.onmessage = (event) => {
-        console.log('Mensagem recebida do servidor:', event.data);
-        // Processar mensagens recebidas...
+        try {
+
+            const packet = deserializePacket(event.data)
+            console.log('Packet recieved', packet)
+
+            switch (packet.type) {
+                case 1://join
+                    console.log('Player joined:', packet.payload)
+                    break
+                case 2://play
+                    console.log('Player joined:', packet.payload)
+                    break
+                case 3://update
+                    console.log('Player joined:', packet.payload)
+                    break
+                case 4://error
+                    console.error(packet.payload)
+                    break
+                default:
+                    console.warn('Unknown packet type:', packet.payload)
+            }
+        } catch (error) {
+            console.error('Failed to deserialize packet: ', error.message)
+        }
     };
 
     socket.onerror = (error) => {

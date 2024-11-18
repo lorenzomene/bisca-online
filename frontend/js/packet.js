@@ -1,4 +1,13 @@
 /**
+ * @typedef {Object} TCPPacket
+ * @property {number} version - The version of the packet (1 byte).
+ * @property {number} type - The type of the packet (1 byte).
+ * @property {number} length - The length of the payload (2 bytes).
+ * @property {string} payload - The content of the packet.
+ */
+
+
+/**
  *  Creates TCP Packet
  *  @param {number} version - version number (1 byte)
  *  @param {number} type - version type (1 byte)
@@ -21,3 +30,34 @@ export function createPacket(version, type, payload) {
     return buffer;
 }
 
+/**
+ *  Deserializes a TCP Packet
+ *  @param {ArrayBuffer} buffer - binary data recieved
+ *  @returns {TCPPacket} TCP Packet
+ *  @throws {Error} if the packet is invalid
+ */
+export function deserializePacket(buffer) {
+    const view = new DataView(buffer)
+
+    if (buffer.byteLength < 4) {
+        throw new Error('Invalid packet: insufficient data for header')
+    }
+
+    const version = view.getUint8(0)
+    const type = view.getUint8(1)
+    const size = view.getUint16(2, true)
+
+    if (buffer.byteLength < 4 + size) {
+        throw new Error('Invalid packet: payload size mismatch')
+    }
+
+    const payloadBytes = new Uint8Array(buffer, 4, size)
+    const payload = new TextDecoder().decode(payloadBytes)
+
+    return {
+        version,
+        type,
+        size,
+        payload
+    }
+}

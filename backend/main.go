@@ -39,7 +39,15 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("Packet recieved: Version=%d Type=%d Payload=%s", packet.Version, packet.Type, string(packet.Data))
 
-		err = conn.WriteMessage(websocket.TextMessage, []byte("Message recieved"))
+		response := &network.TCPPacket{
+			Version: network.PacketVersion1,
+			Type:    network.PacketTypeUpdate,
+			Size:    uint16(len("State update")),
+			Data:    []byte("State update"),
+		}
+
+		serialized, _ := response.Serialize()
+		err = conn.WriteMessage(websocket.BinaryMessage, serialized)
 		if err != nil {
 			log.Println("Error trying to write message: ", err)
 			break
