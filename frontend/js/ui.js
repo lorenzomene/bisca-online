@@ -1,8 +1,9 @@
 import { sendPacket } from './websocket.js';
+import { PACKET_TYPES } from './types.js';
 
 export function setupUI() {
-    document.getElementById('send-test').addEventListener('click', () => {
-        sendPacket(1, 1, 'Jogador1');
+    document.getElementById('start-game').addEventListener('click', () => {
+        sendPacket(1, PACKET_TYPES.NEW_GAME, 'Jogador1');
     });
 }
 
