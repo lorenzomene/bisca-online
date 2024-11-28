@@ -2,7 +2,7 @@
  * @typedef {Object} TCPPacket
  * @property {number} version - The version of the packet (1 byte).
  * @property {number} type - The type of the packet (1 byte).
- * @property {number} length - The length of the payload (2 bytes).
+ * @property {number} size - The length of the payload (2 bytes).
  * @property {string} payload - The content of the packet.
  */
 
@@ -38,6 +38,7 @@ export function createPacket(version, type, payload) {
  */
 export function deserializePacket(buffer) {
     const view = new DataView(buffer)
+    console.log(view)
 
     if (buffer.byteLength < 4) {
         throw new Error('Invalid packet: insufficient data for header')

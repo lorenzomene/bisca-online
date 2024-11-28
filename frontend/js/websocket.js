@@ -4,15 +4,11 @@ let socket;
 
 export function initWebSocket() {
     socket = new WebSocket('ws://localhost:8080/ws');
-
-    socket.onopen = () => {
-        console.log('Conexão WebSocket estabelecida');
-        document.getElementById('status').textContent = 'Conectado!';
-    };
-
+    socket.binaryType = 'arraybuffer'
+    console.log('Binary type:', socket.binaryType);
     socket.onmessage = (event) => {
         try {
-
+            console.log(event)
             const packet = deserializePacket(event.data)
             console.log('Packet recieved', packet)
 
@@ -21,10 +17,10 @@ export function initWebSocket() {
                     console.log('Player joined:', packet.payload)
                     break
                 case 2://play
-                    console.log('Player joined:', packet.payload)
+                    console.log('Player played:', packet.payload)
                     break
                 case 3://update
-                    console.log('Player joined:', packet.payload)
+                    console.log('Game state update:', packet.payload)
                     break
                 case 4://error
                     console.error(packet.payload)

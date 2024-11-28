@@ -39,14 +39,19 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("Packet recieved: Version=%d Type=%d Payload=%s", packet.Version, packet.Type, string(packet.Data))
 
-		response := &network.TCPPacket{
+		response := network.TCPPacket{
 			Version: network.PacketVersion1,
 			Type:    network.PacketTypeUpdate,
 			Size:    uint16(len("State update")),
 			Data:    []byte("State update"),
 		}
+		log.Printf("RESPONSE PACKET: %v", response)
 
 		serialized, _ := response.Serialize()
+		if len(serialized) == 0 {
+			log.Println("Serialization failed: Packet is empty!")
+		}
+		log.Printf("Sending packet: %v", serialized)
 		err = conn.WriteMessage(websocket.BinaryMessage, serialized)
 		if err != nil {
 			log.Println("Error trying to write message: ", err)
