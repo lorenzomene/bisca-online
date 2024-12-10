@@ -1,28 +1,31 @@
-import { createPacket, deserializePacket } from './packet.js';
+import { deserializePacket } from './packet.js';
+import { PACKET_TYPES } from './types.js';
 
 let socket;
 
 export function initWebSocket() {
     socket = new WebSocket('ws://localhost:8080/ws');
     socket.binaryType = 'arraybuffer'
-    console.log('Binary type:', socket.binaryType);
+
     socket.onmessage = (event) => {
         try {
-            console.log(event)
             const packet = deserializePacket(event.data)
             console.log('Packet recieved', packet)
 
             switch (packet.type) {
-                case 1://join
+                case PACKET_TYPES.NEW_GAME://new game
+                    console.log('Game started', packet.payload)
+                    break
+                case PACKET_TYPES.PLAYER_JOIN://join
                     console.log('Player joined:', packet.payload)
                     break
-                case 2://play
+                case PACKET_TYPES.CARD_PLAY://play
                     console.log('Player played:', packet.payload)
                     break
-                case 3://update
+                case PACKET_TYPES.UPDATE_STATE://update
                     console.log('Game state update:', packet.payload)
                     break
-                case 4://error
+                case PACKET_TYPES.ERROR://error
                     console.error(packet.payload)
                     break
                 default:
@@ -43,21 +46,4 @@ export function initWebSocket() {
     };
 }
 
-/**
- *  Send Packet to backend
- *
- *  @param {number} version - version number (1 byte)
- *  @param {number} type - type number (1 byte)
- *  @param {string} payload - packet data
- *  @returns {void}
- */
-export function sendPacket(version, type, payload) {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        const packet = createPacket(version, type, payload);
-        socket.send(packet);
-        console.log('Pacote enviado:', { version, type, payload });
-    } else {
-        console.error('Conexão WebSocket não está aberta');
-    }
-}
 

@@ -13,7 +13,8 @@ const (
 )
 
 const (
-	PacketTypeJoin = iota + 1
+	PacketTypeNewGame = iota + 1
+	PacketTypeJoin
 	PacketTypeCardPlay
 	PacketTypeUpdate
 	PacketTypeError

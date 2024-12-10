@@ -1,8 +1,10 @@
 /**
  * @typedef {import('./types.js').TCPPacket} TCPPacket
  */
-//TODO: make packet types a jsdoc type also
-import { PACKET_TYPES } from './types.js';
+
+/**
+ * @typedef {import('./types.js').PacketType} PacketType
+ */
 
 /**
  *  Creates TCP Packet
@@ -52,10 +54,30 @@ export function deserializePacket(buffer) {
     const payloadBytes = new Uint8Array(buffer, 4, size)
     const payload = new TextDecoder().decode(payloadBytes)
 
+    /** @type {TCPPacket} */
     return {
         version,
-        type,
+        type: /** @type {PacketType} */ (type),
         size,
         payload
+    }
+}
+
+/**
+ *  Send Packet to backend
+ *
+ *  @param {WebSocket} socket - WebSocket
+ *  @param {number} version - version number (1 byte)
+ *  @param {PacketType} type - type number (1 byte)
+ *  @param {string} payload - packet data
+ *  @returns {void}
+ */
+export function sendPacket(socket, version, type, payload) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        const packet = createPacket(version, type, payload);
+        socket.send(packet);
+        console.log('Pacote enviado:', { version, type, payload });
+    } else {
+        console.error('Conexão WebSocket não está aberta');
     }
 }
