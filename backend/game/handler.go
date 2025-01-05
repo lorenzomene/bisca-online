@@ -10,7 +10,9 @@ type Handler struct {
 }
 
 func NewHandler() *Handler {
-	return &Handler{}
+	return &Handler{
+		playerNames: []string{},
+	}
 }
 
 func (h *Handler) HandlePacket(packet network.TCPPacket) error {

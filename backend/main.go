@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bisca-online/backend/game"
 	"bisca-online/backend/pkg/network"
 	"fmt"
 	"log"
@@ -23,6 +24,7 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	log.Println("New connection stablished")
+	packetHandler := game.NewHandler()
 
 	for {
 		_, msg, err := conn.ReadMessage()
@@ -38,6 +40,12 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 		}
 
 		log.Printf("Packet recieved: Version=%d Type=%d Payload=%s", packet.Version, packet.Type, string(packet.Data))
+
+		handlerErr := packetHandler.HandlePacket(*packet)
+
+		if handlerErr != nil {
+			log.Println("Packet Handling Failed: ", handlerErr)
+		}
 
 		response := network.TCPPacket{
 			Version: network.PacketVersion1,
