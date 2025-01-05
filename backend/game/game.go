@@ -1,7 +1,7 @@
 package game
 
 type Player struct {
-	Id     uint8
+	Id     int
 	Name   string
 	Hand   []Card
 	IsTurn bool
@@ -13,7 +13,7 @@ type GameState struct {
 	TableCards      []Card
 	Round           int
 	TurnIndex       int
-	CurrentPlayerId uint8
+	CurrentPlayerId int
 }
 
 func NewGame(playerNames []string) *GameState {

@@ -1,5 +1,9 @@
 import { deserializePacket } from './packet.js';
 import { PACKET_TYPES } from './types.js';
+import { sendPacket } from './packet.js';
+/**
+ * @typedef {import('./types.js').PacketType} PacketType
+ */
 
 let socket;
 
@@ -46,4 +50,15 @@ export function initWebSocket() {
     };
 }
 
+/**
+ *  Calls send packet function with the websocket attached
+ *
+ *  @param {number} version - version number (1 byte)
+ *  @param {PacketType} type - type number (1 byte)
+ *  @param {string} payload - packet data
+ *  @returns {void}
+ */
+export function websocketSendPacket(version, type, payload) {
+    sendPacket(socket, version, type, payload)
+}
 
