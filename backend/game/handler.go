@@ -7,50 +7,86 @@ import (
 
 type Handler struct {
 	playerNames []string
+	playerCount int
+	gameState   *GameState
 }
 
 func NewHandler() *Handler {
 	return &Handler{
 		playerNames: []string{},
+		playerCount: 0,
+		gameState:   nil,
 	}
 }
 
-func (h *Handler) HandlePacket(packet network.TCPPacket) error {
+func (h *Handler) HandlePacket(packet network.TCPPacket) (network.TCPPacket, error) {
+	var response network.TCPPacket
+	response.Version = packet.Version
+
 	switch packet.Type {
 	case network.PacketTypeNewGame:
-		err := NewGame(h.playerNames)
-		if err != nil {
-			return fmt.Errorf("Could not start game", err)
+		if len(h.playerNames) < 2 {
+			response.Type = network.PacketTypeError
+			errorMsg := "Precisa de pelo menos 2 jogadores para começar"
+			response.Data = []byte(errorMsg)
+			response.Size = uint16(len(errorMsg))
+			return response, nil
 		}
+
+		h.gameState = NewGame(h.playerNames)
+		response.Type = network.PacketTypeNewGame
+		msg := "Jogo iniciado!"
+		response.Data = []byte(msg)
+		response.Size = uint16(len(msg))
+		return response, nil
+
 	case network.PacketTypeJoin:
-		err := h.playerJoin(packet.Data)
+		playerName, err := h.playerJoin()
 		if err != nil {
-			return fmt.Errorf("Could not join game", err)
+			response.Type = network.PacketTypeError
+			errorMsg := fmt.Sprintf("Erro ao entrar: %v", err)
+			response.Data = []byte(errorMsg)
+			response.Size = uint16(len(errorMsg))
+			return response, nil
 		}
+
+		response.Type = network.PacketTypeJoin
+		response.Data = []byte(playerName)
+		response.Size = uint16(len(playerName))
+		return response, nil
+
 	case network.PacketTypeCardPlay:
-		err := h.playCard(packet.Data)
-		if err != nil {
-			return fmt.Errorf("Could not play card", err)
-		}
-	case network.PacketTypeUpdate:
-		err := h.playCard(packet.Data)
-		if err != nil {
-			return fmt.Errorf("Could not update game state", err)
-		}
-	case network.PacketTypeError:
-		err := h.playCard(packet.Data)
-		if err != nil {
-			return fmt.Errorf("Could not process error", err)
-		}
+		response.Type = network.PacketTypeUpdate
+		msg := "Estado atualizado"
+		response.Data = []byte(msg)
+		response.Size = uint16(len(msg))
+		return response, nil
+
+	default:
+		response.Type = network.PacketTypeError
+		errorMsg := "Tipo de pacote desconhecido"
+		response.Data = []byte(errorMsg)
+		response.Size = uint16(len(errorMsg))
+		return response, nil
 	}
-	return nil
 }
 
-func (h *Handler) playerJoin(data []byte) error {
-	h.playerNames = append(h.playerNames, string(data))
-	return nil
+func (h *Handler) playerJoin() (string, error) {
+	h.playerCount++
+	playerName := fmt.Sprintf("Player%d", h.playerCount)
+
+	h.playerNames = append(h.playerNames, playerName)
+
+	return playerName, nil
 }
 
 func (h *Handler) playCard(data []byte) error {
 	return nil
+}
+
+func (h *Handler) GetPlayerList() []string {
+	// Return a copy to avoid external modifications
+	playersCopy := make([]string, len(h.playerNames))
+	copy(playersCopy, h.playerNames)
+	return playersCopy
 }

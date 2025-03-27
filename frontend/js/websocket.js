@@ -1,6 +1,7 @@
 import { deserializePacket } from './packet.js';
 import { PACKET_TYPES } from './types.js';
 import { sendPacket } from './packet.js';
+import { addPlayerToUI } from './ui.js';
 /**
  * @typedef {import('./types.js').PacketType} PacketType
  */
@@ -11,6 +12,10 @@ export function initWebSocket() {
     socket = new WebSocket('ws://localhost:8080/ws');
     socket.binaryType = 'arraybuffer'
 
+    socket.onopen = () => {
+        document.getElementById('status').textContent = 'Conectado!';
+    };
+
     socket.onmessage = (event) => {
         try {
             const packet = deserializePacket(event.data)
@@ -19,9 +24,12 @@ export function initWebSocket() {
             switch (packet.type) {
                 case PACKET_TYPES.NEW_GAME://new game
                     console.log('Game started', packet.payload)
+                    document.getElementById('messages').textContent = 'Novo jogo iniciado!';
                     break
                 case PACKET_TYPES.PLAYER_JOIN://join
                     console.log('Player joined:', packet.payload)
+                    addPlayerToUI(packet.payload);
+                    document.getElementById('messages').textContent = `${packet.payload} entrou no jogo!`;
                     break
                 case PACKET_TYPES.CARD_PLAY://play
                     console.log('Player played:', packet.payload)
@@ -31,6 +39,7 @@ export function initWebSocket() {
                     break
                 case PACKET_TYPES.ERROR://error
                     console.error(packet.payload)
+                    document.getElementById('messages').textContent = `Erro: ${packet.payload}`;
                     break
                 default:
                     console.warn('Unknown packet type:', packet.payload)
@@ -42,6 +51,7 @@ export function initWebSocket() {
 
     socket.onerror = (error) => {
         console.error('Erro na conexão WebSocket:', error);
+        document.getElementById('status').textContent = 'Erro de conexão!';
     };
 
     socket.onclose = () => {

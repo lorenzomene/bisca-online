@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -14,17 +15,66 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func handleConnection(w http.ResponseWriter, r *http.Request) {
+var packetHandler = game.NewHandler()
 
+// Store all active connections
+var (
+	connections = make(map[*websocket.Conn]bool)
+	connMutex   = sync.Mutex{}
+)
+
+func addConnection(conn *websocket.Conn) {
+	connMutex.Lock()
+	defer connMutex.Unlock()
+	connections[conn] = true
+}
+
+func removeConnection(conn *websocket.Conn) {
+	connMutex.Lock()
+	defer connMutex.Unlock()
+	delete(connections, conn)
+}
+
+func broadcastToAll(packet network.TCPPacket) {
+	serialized, err := packet.Serialize()
+	if err != nil || len(serialized) == 0 {
+		log.Println("Serialization failed:", err)
+		return
+	}
+
+	connMutex.Lock()
+	defer connMutex.Unlock()
+
+	log.Printf("Broadcasting packet: Type=%d Payload=%s to %d clients",
+		packet.Type, string(packet.Data), len(connections))
+
+	for conn := range connections {
+		err := conn.WriteMessage(websocket.BinaryMessage, serialized)
+		if err != nil {
+			log.Printf("Error sending to client: %v", err)
+			// We'll remove this connection in the handleConnection function
+			// to avoid modifying the map during iteration
+		}
+	}
+}
+
+func handleConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Error trying to upgrade to websocket: ", err)
 		return
 	}
-	defer conn.Close()
 
-	log.Println("New connection stablished")
-	packetHandler := game.NewHandler()
+	addConnection(conn)
+	defer func() {
+		conn.Close()
+		removeConnection(conn)
+	}()
+
+	log.Println("New connection established")
+
+	// Send current player list to new connections
+	sendPlayerListToClient(conn)
 
 	for {
 		_, msg, err := conn.ReadMessage()
@@ -39,33 +89,58 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		log.Printf("Packet recieved: Version=%d Type=%d Payload=%s", packet.Version, packet.Type, string(packet.Data))
+		log.Printf("Packet received: Version=%d Type=%d Payload=%s",
+			packet.Version, packet.Type, string(packet.Data))
 
-		handlerErr := packetHandler.HandlePacket(*packet)
+		response, handlerErr := packetHandler.HandlePacket(*packet)
 
 		if handlerErr != nil {
 			log.Println("Packet Handling Failed: ", handlerErr)
-		}
 
-		response := network.TCPPacket{
+			// Create error response packet
+			response = network.TCPPacket{
+				Version: network.PacketVersion1,
+				Type:    network.PacketTypeError,
+				Size:    uint16(len(handlerErr.Error())),
+				Data:    []byte(handlerErr.Error()),
+			}
+
+			// Send error only to the client who made the request
+			serialized, _ := response.Serialize()
+			conn.WriteMessage(websocket.BinaryMessage, serialized)
+		} else {
+			// Broadcast successful response to all clients
+			broadcastToAll(response)
+		}
+	}
+}
+
+// Send the current list of players to a newly connected client
+func sendPlayerListToClient(conn *websocket.Conn) {
+	players := packetHandler.GetPlayerList()
+
+	if len(players) == 0 {
+		return
+	}
+
+	for _, playerName := range players {
+		packet := network.TCPPacket{
 			Version: network.PacketVersion1,
-			Type:    network.PacketTypeUpdate,
-			Size:    uint16(len("State update")),
-			Data:    []byte("State update"),
+			Type:    network.PacketTypeJoin,
+			Size:    uint16(len(playerName)),
+			Data:    []byte(playerName),
 		}
-		log.Printf("RESPONSE PACKET: %v", response)
 
-		serialized, _ := response.Serialize()
-		if len(serialized) == 0 {
-			log.Println("Serialization failed: Packet is empty!")
+		serialized, err := packet.Serialize()
+		if err != nil {
+			log.Println("Error serializing player list:", err)
+			continue
 		}
-		log.Printf("Sending packet: %v", serialized)
+
 		err = conn.WriteMessage(websocket.BinaryMessage, serialized)
 		if err != nil {
-			log.Println("Error trying to write message: ", err)
-			break
+			log.Println("Error sending player list:", err)
 		}
-
 	}
 }
 
