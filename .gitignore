@@ -1,0 +1,5 @@
+main.exe
+tmp/
+*.log
+.vscode/
+.DS_Store
