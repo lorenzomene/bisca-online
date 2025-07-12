@@ -17,7 +17,6 @@ var upgrader = websocket.Upgrader{
 
 var packetHandler = game.NewHandler()
 
-// Store all active connections
 var (
 	connections = make(map[*websocket.Conn]bool)
 	connMutex   = sync.Mutex{}
@@ -73,12 +72,14 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("New connection established")
 
-	// Send current player list to new connections
 	sendPlayerListToClient(conn)
 
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
+			}
 			log.Println("Error trying to read message: ", err)
 			break
 		}
@@ -97,7 +98,6 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 		if handlerErr != nil {
 			log.Println("Packet Handling Failed: ", handlerErr)
 
-			// Create error response packet
 			response = network.TCPPacket{
 				Version: network.PacketVersion1,
 				Type:    network.PacketTypeError,
@@ -109,13 +109,11 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 			serialized, _ := response.Serialize()
 			conn.WriteMessage(websocket.BinaryMessage, serialized)
 		} else {
-			// Broadcast successful response to all clients
 			broadcastToAll(response)
 		}
 	}
 }
 
-// Send the current list of players to a newly connected client
 func sendPlayerListToClient(conn *websocket.Conn) {
 	players := packetHandler.GetPlayerList()
 
