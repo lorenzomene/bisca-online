@@ -6,13 +6,22 @@ import (
 	"time"
 )
 
+type Suit rune
+
+const (
+	Copas   Suit = 'C'
+	Espadas Suit = 'E'
+	Ouros   Suit = 'O'
+	Paus    Suit = 'P'
+)
+
 type Card struct {
-	Suit  rune
+	Suit  Suit
 	Value int
 }
 
 func NewDeck() []Card {
-	suits := []rune{'C', 'E', 'O', 'P'}
+	suits := []Suit{Copas, Espadas, Ouros, Paus}
 	deck := []Card{}
 	allowedValues := []int{1, 2, 3, 4, 5, 6, 7, 10, 11, 12}
 
@@ -23,7 +32,7 @@ func NewDeck() []Card {
 	}
 
 	shuffleCards(deck)
-
+	fmt.Println("Deck created with", len(deck), "cards:")
 	for _, card := range deck {
 		fmt.Printf("Card: %c%d\n", card.Suit, card.Value)
 	}

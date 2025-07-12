@@ -14,6 +14,7 @@ type GameState struct {
 	Round           int
 	TurnIndex       int
 	CurrentPlayerId int
+	Bisca           Suit
 }
 
 func NewGame(playerNames []string) *GameState {
@@ -26,11 +27,18 @@ func NewGame(playerNames []string) *GameState {
 		}
 	}
 
+	deck := NewDeck()
+	var bisca Suit
+	if len(deck) > 0 {
+		bisca = deck[len(deck)-1].Suit
+	}
+
 	return &GameState{
 		Players:         players,
-		Deck:            NewDeck(),
+		Deck:            deck,
 		Round:           1,
 		TurnIndex:       0,
 		CurrentPlayerId: 0,
+		Bisca:           bisca,
 	}
 }
