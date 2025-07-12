@@ -22,22 +22,27 @@ export function initWebSocket() {
             console.log('Packet recieved', packet)
 
             switch (packet.type) {
-                case PACKET_TYPES.NEW_GAME://new game
+                //NEW GAME
+                case PACKET_TYPES.NEW_GAME:
                     console.log('Game started', packet.payload)
                     document.getElementById('messages').textContent = 'Novo jogo iniciado!';
                     break
-                case PACKET_TYPES.PLAYER_JOIN://join
+                // JOIN GAME
+                case PACKET_TYPES.PLAYER_JOIN:
                     console.log('Player joined:', packet.payload)
                     addPlayerToUI(packet.payload);
                     document.getElementById('messages').textContent = `${packet.payload} entrou no jogo!`;
                     break
-                case PACKET_TYPES.CARD_PLAY://play
+                // PLAY CARD
+                case PACKET_TYPES.CARD_PLAY:
                     console.log('Player played:', packet.payload)
                     break
-                case PACKET_TYPES.UPDATE_STATE://update
+                // UPDATE STATE
+                case PACKET_TYPES.UPDATE_STATE:
                     console.log('Game state update:', packet.payload)
                     break
-                case PACKET_TYPES.ERROR://error
+                // ERROR PACKET
+                case PACKET_TYPES.ERROR:
                     console.error(packet.payload)
                     document.getElementById('messages').textContent = `Erro: ${packet.payload}`;
                     break

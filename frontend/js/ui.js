@@ -25,7 +25,8 @@ export function addPlayerToUI(playerName) {
 export function setupUI() {
     // GAME START
     document.getElementById('start-game').addEventListener('click', () => {
-        websocketSendPacket(1, /** @type {PacketType} */(PACKET_TYPES.NEW_GAME), '');
+        console.log('Starting new game...');
+        websocketSendPacket(1, /** @type {PacketType} */(PACKET_TYPES.NEW_GAME), "start");
     });
 
     // JOIN GAME
