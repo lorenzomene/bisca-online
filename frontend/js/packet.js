@@ -37,7 +37,6 @@ export function createPacket(version, type, payload) {
  */
 export function deserializePacket(buffer) {
     const view = new DataView(buffer)
-    console.log(view)
 
     if (buffer.byteLength < 4) {
         throw new Error('Invalid packet: insufficient data for header')

@@ -51,8 +51,6 @@ func broadcastToAll(packet network.TCPPacket) {
 		err := conn.WriteMessage(websocket.BinaryMessage, serialized)
 		if err != nil {
 			log.Printf("Error sending to client: %v", err)
-			// We'll remove this connection in the handleConnection function
-			// to avoid modifying the map during iteration
 		}
 	}
 }
@@ -148,6 +146,6 @@ func main() {
 
 	http.HandleFunc("/ws", handleConnection)
 
-	fmt.Println("Servidor iniciado em http://localhost:8080")
+	fmt.Println("Server started at http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
