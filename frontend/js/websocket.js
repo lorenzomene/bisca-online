@@ -2,11 +2,14 @@ import { deserializePacket } from './packet.js';
 import { PACKET_TYPES } from './types.js';
 import { sendPacket } from './packet.js';
 import { addPlayerToUI } from './ui.js';
+import GameState from './game.js';
 /**
  * @typedef {import('./types.js').PacketType} PacketType
  */
 
 let socket;
+
+let GAME_STATE = new GameState();
 
 export function initWebSocket() {
     socket = new WebSocket('ws://localhost:8080/ws');
@@ -19,12 +22,19 @@ export function initWebSocket() {
     socket.onmessage = (event) => {
         try {
             const packet = deserializePacket(event.data)
-            console.log('Packet recieved', packet)
+            console.log('Packet received', packet)
 
             switch (packet.type) {
-                //NEW GAME
+                // NEW GAME
                 case PACKET_TYPES.NEW_GAME:
-                    console.log('Game started', packet.payload)
+                    console.log('Game started')
+                    try {
+                        const deck = JSON.parse(packet.payload)
+                        GAME_STATE.updateDeck(deck);
+                        GAME_STATE.nextRound();
+                    } catch (e) {
+                        console.error('Failed to parse deck JSON:', e)
+                    }
                     document.getElementById('messages').textContent = 'Novo jogo iniciado!';
                     break
                 // JOIN GAME
@@ -32,10 +42,6 @@ export function initWebSocket() {
                     console.log('Player joined:', packet.payload)
                     addPlayerToUI(packet.payload);
                     document.getElementById('messages').textContent = `${packet.payload} entrou no jogo!`;
-                    break
-                // PLAY CARD
-                case PACKET_TYPES.CARD_PLAY:
-                    console.log('Player played:', packet.payload)
                     break
                 // UPDATE STATE
                 case PACKET_TYPES.UPDATE_STATE:
@@ -55,13 +61,13 @@ export function initWebSocket() {
     };
 
     socket.onerror = (error) => {
-        console.error('Erro na conexão WebSocket:', error);
-        document.getElementById('status').textContent = 'Erro de conexão!';
+        console.error('WebSocket connection error:', error);
+        document.getElementById('status').textContent = 'Connection error!';
     };
 
     socket.onclose = () => {
-        console.log('Conexão WebSocket encerrada');
-        document.getElementById('status').textContent = 'Desconectado!';
+        console.log('WebSocket connection closed');
+        document.getElementById('status').textContent = 'Disconnected!';
     };
 }
 
